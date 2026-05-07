@@ -1,0 +1,176 @@
+{{define "dashboard.html"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart2FA — Dashboard</title>
+  <meta name="description" content="Your 2FA vault — view and copy TOTP codes."/>
+  <!-- PWA -->
+  <link rel="manifest" href="/static/manifest.json"/>
+  <meta name="theme-color" content="#7c6eff"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Smart2FA"/>
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png"/>
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/static/css/app.css"/>
+  <script src="https://unpkg.com/htmx.org@1.9.12/dist/htmx.min.js" defer></script>
+</head>
+<body class="dash-page">
+
+  <header class="topbar">
+    <div class="topbar-brand">
+      Smart<span class="accent">2FA</span>
+    </div>
+    <div class="topbar-actions">
+      <!-- Install App button (shown by JS when installable) -->
+      <button class="btn-ghost" id="install-btn" onclick="installPWA()" style="display:none">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2v13m0 0l-4-4m4 4l4-4"/><path d="M3 17v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/>
+        </svg>
+        <span class="install-label">Install</span>
+      </button>
+      <a href="/backup" class="btn-ghost" id="backup-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/>
+          <path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/>
+        </svg>
+        Backup
+      </a>
+      <form action="/lock" method="POST" style="display:inline">
+        <button type="submit" class="btn-ghost" id="lock-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          Lock
+        </button>
+      </form>
+    </div>
+  </header>
+
+  <main class="dash-main">
+    <div class="dash-header">
+      <h1>Your Vault</h1>
+      <button class="btn-primary" id="add-btn" onclick="openAddModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Add Account
+      </button>
+    </div>
+
+    <!-- Tab Group Bar -->
+    <div class="tabs-bar" id="tabs-bar">
+      {{range .Groups}}
+      <button class="tab-btn" data-group="{{.}}" onclick="switchTab(this, '{{.}}')">
+        <span class="tab-label">{{.}}</span>
+        {{$count := index $.GroupCounts .}}
+        {{if gt $count 0}}
+        <span class="tab-badge">{{$count}}</span>
+        {{end}}
+      </button>
+      {{end}}
+      <button class="tab-new-btn" id="new-group-btn" onclick="openNewGroupTab()" title="New group">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        New Group
+      </button>
+    </div>
+
+    <div id="codes-container"
+         hx-get="/partial/codes?group=Default"
+         hx-trigger="load"
+         hx-swap="innerHTML settle:0ms"
+         class="codes-list">
+    </div>
+  </main>
+
+  <!-- Add Account Modal -->
+  <div id="add-modal" class="modal-overlay hidden" onclick="closeModalOnBg(event)">
+    <div class="modal-card glass">
+      <div class="modal-header">
+        <h2>Add Account</h2>
+        <button class="modal-close" id="modal-close-btn" onclick="closeAddModal()">✕</button>
+      </div>
+      <form action="/entry/add" method="POST" class="modal-form" id="add-entry-form">
+        <!-- Group indicator (readonly) -->
+        <div class="modal-group-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;color:var(--text-muted)">
+            <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+          </svg>
+          <span class="modal-group-label-text">Group:</span>
+          <span class="modal-group-tag" id="modal-group-tag">Default</span>
+          <input type="hidden" name="group" id="entry-group" value="Default"/>
+        </div>
+        <div class="field-group">
+          <label for="entry-name">Account Name</label>
+          <input id="entry-name" type="text" name="name" placeholder="Google, GitHub, AWS…"
+                 autocomplete="off" required/>
+        </div>
+        <div class="field-group">
+          <label for="entry-secret">TOTP Secret or otpauth:// URI</label>
+          <input id="entry-secret" type="text" name="secret" placeholder="BASE32SECRET or otpauth://…"
+                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" required/>
+        </div>
+        <button type="submit" class="btn-primary btn-full" id="add-entry-submit">Add Account</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Account Modal -->
+  <div id="edit-modal" class="modal-overlay hidden" onclick="closeEditModalOnBg(event)">
+    <div class="modal-card glass">
+      <div class="modal-header">
+        <h2>Edit Account</h2>
+        <button class="modal-close" id="edit-modal-close-btn" onclick="closeEditModal()">✕</button>
+      </div>
+      <form action="/entry/edit" method="POST" class="modal-form" id="edit-entry-form">
+        <input type="hidden" name="orig_name" id="edit-orig-name"/>
+        <div class="field-group">
+          <label for="edit-entry-name">Account Name</label>
+          <input id="edit-entry-name" type="text" name="name"
+                 autocomplete="off" required/>
+        </div>
+        <div class="field-group">
+          <label for="edit-entry-secret">
+            New Secret
+            <span class="field-label-hint">(để trống = giữ nguyên)</span>
+          </label>
+          <input id="edit-entry-secret" type="text" name="secret"
+                 placeholder="Để trống để giữ secret hiện tại…"
+                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+        </div>
+        <div class="field-group">
+          <label for="edit-entry-group">Group</label>
+          <input id="edit-entry-group" type="text" name="group"
+                 list="edit-groups-datalist" autocomplete="off"/>
+          <datalist id="edit-groups-datalist">
+            {{range .Groups}}
+            <option value="{{.}}">
+            {{end}}
+          </datalist>
+        </div>
+        <button type="submit" class="btn-primary btn-full" id="edit-entry-submit">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- iOS install banner -->
+  <div id="ios-banner" class="ios-banner hidden">
+    <div class="ios-banner-text">
+      <strong>Cài Smart2FA</strong>
+      <p>Nhấn <strong>⎙ Share</strong> → <strong>"Add to Home Screen"</strong></p>
+    </div>
+    <button class="ios-banner-close" onclick="document.getElementById('ios-banner').classList.add('hidden')">✕</button>
+  </div>
+
+  <div id="toast" class="toast hidden">Copied!</div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
+{{end}}

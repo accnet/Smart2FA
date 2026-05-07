@@ -1,0 +1,22 @@
+# Binaries
+smart2fa
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Database
+data/*.db
+data/*.db-wal
+data/*.db-shm
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Misc
+*.log
+tmp/
+node_modules/
+.env

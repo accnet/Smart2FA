@@ -1,0 +1,69 @@
+{{define "backup.html"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart2FA — Backup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/static/css/app.css"/>
+</head>
+<body class="dash-page">
+
+  <header class="topbar">
+    <div class="topbar-brand">Smart<span class="accent">2FA</span></div>
+    <div class="topbar-actions">
+      <a href="/dashboard" class="btn-ghost" id="back-dash-link">← Dashboard</a>
+    </div>
+  </header>
+
+  <main class="dash-main backup-main">
+    <h1 class="backup-title">Backup &amp; Restore</h1>
+
+    {{if .Error}}
+    <div class="alert-error">{{.Error}}</div>
+    {{end}}
+
+    <div class="backup-grid">
+      <!-- Export -->
+      <div class="backup-card glass">
+        <div class="backup-card-icon">⬇️</div>
+        <h2>Export Backup</h2>
+        <p>Download an encrypted <code>.votp</code> file protected by a backup password.</p>
+        <form action="/backup/export" method="POST" class="backup-form" id="export-form">
+          <div class="field-group">
+            <label for="exp-pass">Backup Password</label>
+            <input id="exp-pass" type="password" name="backup_password" placeholder="Strong password" required/>
+          </div>
+          <button type="submit" class="btn-primary btn-full" id="export-btn">Download .votp</button>
+        </form>
+      </div>
+
+      <!-- Import -->
+      <div class="backup-card glass">
+        <div class="backup-card-icon">⬆️</div>
+        <h2>Import Backup</h2>
+        <p>Upload a <code>.votp</code> file and enter the backup password to restore entries.</p>
+        <form action="/backup/import" method="POST" enctype="multipart/form-data" class="backup-form" id="import-form">
+          <div class="field-group">
+            <label for="imp-file">Backup File (.votp)</label>
+            <input id="imp-file" type="file" name="votp_file" accept=".votp,.json" required/>
+          </div>
+          <div class="field-group">
+            <label for="imp-pass">Backup Password</label>
+            <input id="imp-pass" type="password" name="backup_password" placeholder="Password used when exporting" required/>
+          </div>
+          <button type="submit" class="btn-primary btn-full" id="import-btn">Import &amp; Merge</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="backup-note">
+      <strong>Note:</strong> Importing merges entries by name — existing entries with the same name are kept.
+    </div>
+  </main>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
+{{end}}
