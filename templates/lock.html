@@ -1,23 +1,26 @@
 {{define "lock.html"}}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Smart2FA — Unlock</title>
-  <meta name="description" content="Smart2FA — minimal self-hosted 2FA manager. Unlock your vault with your phrase and passcode."/>
+  <meta name="description"
+    content="Smart2FA — minimal self-hosted 2FA manager. Unlock your vault with your phrase and passcode." />
   <!-- PWA -->
-  <link rel="manifest" href="/static/manifest.json"/>
-  <meta name="theme-color" content="#7c6eff"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <meta name="apple-mobile-web-app-title" content="Smart2FA"/>
-  <link rel="apple-touch-icon" href="/static/icons/icon-192.png"/>
+  <link rel="manifest" href="/static/manifest.json" />
+  <meta name="theme-color" content="#7c6eff" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Smart2FA" />
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
   <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/static/css/app.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/app.css?v=2" />
 </head>
+
 <body class="lock-page">
   <div class="lock-bg">
     <div class="lock-orb lock-orb-1"></div>
@@ -27,13 +30,13 @@
   <div class="lock-card glass">
     <div class="lock-icon">
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
       </svg>
     </div>
 
     <h1 class="lock-title">Smart<span class="accent">2FA</span></h1>
-    <p class="lock-subtitle">Minimal · Self-hosted · Private</p>
+    <p class="lock-subtitle">Your Digital Vault, Secured</p>
 
     {{if .Error}}
     <div class="alert-error">{{.Error}}</div>
@@ -42,26 +45,46 @@
     <form id="unlock-form" action="/unlock" method="POST" class="unlock-form">
       <div class="field-group">
         <label for="phrase">Phrase</label>
-        <input id="phrase" type="text" name="phrase" placeholder="your secret phrase"
-               autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" required/>
+        <input id="phrase" type="text" name="phrase" placeholder="your secret phrase" autocomplete="off"
+          autocorrect="off" autocapitalize="off" spellcheck="false" required />
       </div>
 
-      <div class="field-group">
-        <label for="passcode">Passcode</label>
-        <input id="passcode" type="password" name="passcode" placeholder="0000"
-               autocomplete="off" maxlength="20" required/>
-      </div>
-
-      <button id="unlock-btn" type="submit" class="btn-primary btn-full">
+      <button id="unlock-btn" type="button" class="btn-primary btn-full" onclick="openPasscodeModal()">
         <span class="btn-text">Unlock Vault</span>
-        <span class="btn-spinner hidden"></span>
       </button>
     </form>
+
+    <!-- Passcode Modal -->
+    <div id="passcode-modal" class="passcode-modal-overlay hidden" onclick="closePasscodeModalOnBg(event)">
+      <div class="passcode-modal-card glass">
+        <div class="passcode-modal-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+        </div>
+        <h2 class="passcode-modal-title">Enter Passcode</h2>
+        <p class="passcode-modal-sub">Confirm your identity to unlock</p>
+
+        <div class="field-group" style="margin-top:8px">
+          <label for="passcode-input">Passcode</label>
+          <input id="passcode-input" type="password" name="passcode" placeholder="••••••" autocomplete="off"
+            maxlength="20" form="unlock-form" onkeydown="handlePasscodeKey(event)" />
+        </div>
+
+        <div class="passcode-modal-actions">
+          <button type="button" class="btn-ghost" onclick="closePasscodeModal()">Cancel</button>
+          <button type="button" id="passcode-confirm-btn" class="btn-primary" onclick="confirmPasscode()">
+            <span class="btn-text">Confirm</span>
+          </button>
+        </div>
+      </div>
+    </div>
 
     <p class="lock-hint">New phrase+passcode combination creates a new vault.</p>
   </div>
 
-  <script src="/static/js/app.js"></script>
+  <script src="/static/js/app.js?v=2"></script>
 </body>
+
 </html>
 {{end}}

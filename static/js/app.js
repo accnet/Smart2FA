@@ -378,18 +378,77 @@ document.body.addEventListener('htmx:afterSwap', e => {
 });
 
 // ============================================================
-// Unlock form spinner
+// Passcode Modal — Unlock flow
 // ============================================================
-const unlockForm = document.getElementById('unlock-form');
-if (unlockForm) {
-  unlockForm.addEventListener('submit', () => {
-    const btn = document.getElementById('unlock-btn');
-    if (btn) {
-      btn.querySelector('.btn-text').textContent = 'Unlocking…';
-      btn.disabled = true;
-    }
-  });
+
+function openPasscodeModal() {
+  const phrase = document.getElementById('phrase');
+  if (phrase && !phrase.value.trim()) {
+    phrase.focus();
+    phrase.style.borderColor = 'var(--danger)';
+    phrase.style.boxShadow = '0 0 0 3px rgba(255,90,90,0.25)';
+    setTimeout(() => {
+      phrase.style.borderColor = '';
+      phrase.style.boxShadow = '';
+    }, 1500);
+    return;
+  }
+
+  const modal = document.getElementById('passcode-modal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('passcode-input')?.focus(), 80);
 }
+
+function closePasscodeModal() {
+  const modal = document.getElementById('passcode-modal');
+  if (modal) modal.classList.add('hidden');
+  document.body.style.overflow = '';
+  const input = document.getElementById('passcode-input');
+  if (input) input.value = '';
+}
+
+function closePasscodeModalOnBg(e) {
+  if (e.target === document.getElementById('passcode-modal')) closePasscodeModal();
+}
+
+function confirmPasscode() {
+  const input = document.getElementById('passcode-input');
+  const passcode = input ? input.value : '';
+  if (!passcode) {
+    if (input) {
+      input.style.borderColor = 'var(--danger)';
+      input.style.boxShadow = '0 0 0 3px rgba(255,90,90,0.25)';
+      input.focus();
+      setTimeout(() => { input.style.borderColor = ''; input.style.boxShadow = ''; }, 1500);
+    }
+    return;
+  }
+
+  // Show loading state
+  const confirmBtn = document.getElementById('passcode-confirm-btn');
+  if (confirmBtn) {
+    confirmBtn.querySelector('.btn-text').textContent = 'Unlocking…';
+    confirmBtn.disabled = true;
+  }
+
+  // passcode-input has form="unlock-form" so it's submitted automatically
+  document.getElementById('unlock-form').submit();
+}
+
+function handlePasscodeKey(e) {
+  if (e.key === 'Enter') { e.preventDefault(); confirmPasscode(); }
+  if (e.key === 'Escape') { closePasscodeModal(); }
+}
+
+// Close passcode modal on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('passcode-modal') &&
+      !document.getElementById('passcode-modal').classList.contains('hidden')) {
+    closePasscodeModal();
+  }
+});
 
 // ============================================================
 // PWA Install
